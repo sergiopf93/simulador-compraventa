@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador Compraventa</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #f0f4fa;
+    --bg2:       #e6ecf7;
+    --white:     #ffffff;
+    --blue-deep: #0b2a6b;
+    --blue:      #1a4dbe;
+    --blue-mid:  #2e6bef;
+    --blue-soft: #dce8ff;
+    --blue-pale: #eef3fd;
+    --border:    #c8d9f5;
+    --border-lt: #e2ebfc;
+    --text:      #0b1a3a;
+    --text-mid:  #3a5080;
+    --text-dim:  #7a90b8;
+    --text-faint:#a8bcda;
+    --success:   #0f7a56;
+    --success-bg:#e6f7f2;
+    --danger:    #c0392b;
+    --danger-bg: #fdecea;
+    --radius:    14px;
+    --radius-sm: 8px;
+    --shadow:    0 2px 12px rgba(11,42,107,0.08);
+    --shadow-lg: 0 8px 32px rgba(11,42,107,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding: 32px 24px 60px;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(var(--border-lt) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border-lt) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none; z-index: 0;
+  }
+  .container { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; }
+
+  /* HEADER */
+  header {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    margin-bottom: 36px; gap: 20px; flex-wrap: wrap;
+  }
+  .header-eyebrow {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--blue-mid);
+    margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+  }
+  .header-eyebrow::before {
+    content: ''; display: inline-block; width: 24px; height: 2px;
+    background: var(--blue-mid); border-radius: 2px;
+  }
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(30px, 4vw, 46px); font-weight: 700;
+    color: var(--blue-deep); line-height: 1; letter-spacing: -0.5px;
+  }
+  h1 em { font-style: normal; color: var(--blue-mid); }
+  .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+  .status-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 999px; padding: 8px 16px;
+    font-size: 12px; font-weight: 500; color: var(--text-mid);
+    box-shadow: var(--shadow);
+  }
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--text-faint); flex-shrink: 0; transition: all 0.3s;
+  }
+  .status-dot.connected { background: var(--success); box-shadow: 0 0 0 3px var(--success-bg); }
+  .status-dot.loading   { background: var(--blue-mid); animation: pulse 1s infinite; }
+  .status-dot.error     { background: var(--danger); box-shadow: 0 0 0 3px var(--danger-bg); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .sync-badge { font-size: 11px; font-weight: 500; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+  .sync-spinner {
+    width: 10px; height: 10px; border: 1.5px solid var(--border);
+    border-top-color: var(--blue-mid); border-radius: 50%;
+    animation: spin 0.7s linear infinite; display: none;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .saving .sync-spinner { display: block; }
+  .saving .sync-text::after { content: 'guardando en Sheets…'; color: var(--blue-mid); }
+  .saved  .sync-text::after { content: 'guardado ✓'; color: var(--success); }
+  .idle   .sync-text::after { content: ''; }
+
+  /* SETUP */
+  #setup-panel {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 32px; margin-bottom: 28px;
+    box-shadow: var(--shadow-lg); animation: slideDown 0.35s ease;
+  }
+  @keyframes slideDown { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+  #setup-panel h2 { font-family:'Playfair Display',serif; font-size:20px; color:var(--blue-deep); margin-bottom:6px; }
+  #setup-panel > p { font-size:13px; color:var(--text-dim); line-height:1.7; margin-bottom:24px; max-width:700px; }
+  .setup-steps { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; margin-bottom:24px; }
+  .setup-step { background:var(--blue-pale); border:1px solid var(--border); border-radius:var(--radius-sm); padding:16px; }
+  .step-num { font-size:10px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--blue-mid); margin-bottom:8px; }
+  .setup-step h3 { font-size:13px; font-weight:600; color:var(--blue-deep); margin-bottom:6px; }
+  .setup-step p  { font-size:12px; color:var(--text-mid); line-height:1.6; }
+  .setup-step a  { color:var(--blue-mid); }
+  .input-row { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; }
+  .input-group { display:flex; flex-direction:column; gap:5px; flex:1; min-width:200px; }
+  .input-group label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--text-mid); }
+  input[type="text"], input[type="password"] {
+    background:var(--white); border:1.5px solid var(--border); border-radius:var(--radius-sm);
+    padding:10px 14px; color:var(--text); font-family:'DM Sans',sans-serif;
+    font-size:13px; outline:none; transition:border-color .2s, box-shadow .2s; width:100%;
+  }
+  input[type="text"]:focus, input[type="password"]:focus {
+    border-color:var(--blue-mid); box-shadow:0 0 0 3px rgba(46,107,239,.12);
+  }
+  .btn { padding:11px 22px; border-radius:var(--radius-sm); font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; cursor:pointer; border:none; transition:all .18s; white-space:nowrap; }
+  .btn-primary { background:var(--blue); color:#fff; box-shadow:0 2px 8px rgba(26,77,190,.3); }
+  .btn-primary:hover { background:var(--blue-deep); transform:translateY(-1px); box-shadow:0 4px 16px rgba(26,77,190,.35); }
+  .btn-ghost { background:transparent; color:var(--text-dim); border:1.5px solid var(--border); }
+  .btn-ghost:hover { border-color:var(--text-mid); color:var(--text); }
+  #setup-error { margin-top:12px; font-size:12px; color:var(--danger); background:var(--danger-bg); border-radius:var(--radius-sm); padding:10px 14px; display:none; }
+
+  /* BALANCE HERO */
+  .balance-hero {
+    background: linear-gradient(135deg, var(--blue-deep) 0%, var(--blue) 100%);
+    border-radius: var(--radius); padding: 32px 36px; margin-bottom: 20px;
+    position: relative; overflow: hidden; box-shadow: var(--shadow-lg);
+  }
+  .balance-hero::before {
+    content:''; position:absolute; top:-80px; right:-80px; width:280px; height:280px;
+    background:radial-gradient(circle,rgba(255,255,255,.07) 0%,transparent 70%); border-radius:50%;
+  }
+  .balance-hero::after {
+    content:''; position:absolute; bottom:-40px; left:40%; width:160px; height:160px;
+    background:radial-gradient(circle,rgba(255,255,255,.04) 0%,transparent 70%); border-radius:50%;
+  }
+  .balance-hero-label {
+    font-size:10px; font-weight:600; letter-spacing:.14em; text-transform:uppercase;
+    color:rgba(255,255,255,.5); margin-bottom:24px; display:flex; align-items:center; gap:10px;
+  }
+  .balance-hero-label::after { content:''; flex:1; height:1px; background:rgba(255,255,255,.12); }
+  .balance-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:0; position:relative; z-index:1; }
+  @media(max-width:900px){.balance-grid{grid-template-columns:1fr 1fr;gap:24px 0;}}
+  @media(max-width:540px){.balance-grid{grid-template-columns:1fr;}}
+  .balance-item { padding:0 28px 0 0; border-right:1px solid rgba(255,255,255,.1); margin-right:28px; }
+  .balance-item:last-child { border-right:none; margin-right:0; padding-right:0; }
+  .bi-label { font-size:11px; font-weight:500; color:rgba(255,255,255,.55); margin-bottom:10px; line-height:1.4; }
+  .bi-value {
+    font-family:'Playfair Display',serif; font-size:clamp(22px,2.5vw,30px);
+    font-weight:700; color:#fff; line-height:1; transition:all .35s; letter-spacing:-.5px;
+  }
+  .bi-value.positive { color:#6ee7bb; }
+  .bi-value.negative { color:#f4a0a0; }
+  .bi-value.accent   { color:#93c5fd; }
+  .bi-sub { font-size:10px; color:rgba(255,255,255,.35); margin-top:6px; }
+
+  /* DASHBOARD */
+  .dashboard { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media(max-width:860px){.dashboard{grid-template-columns:1fr;}}
+
+  /* CARDS */
+  .card {
+    background:var(--white); border:1px solid var(--border); border-radius:var(--radius);
+    padding:24px 28px; box-shadow:var(--shadow);
+    animation:fadeUp .4s ease both;
+  }
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  .card:nth-child(1){animation-delay:.05s} .card:nth-child(2){animation-delay:.10s}
+  .card:nth-child(3){animation-delay:.15s} .card:nth-child(4){animation-delay:.20s}
+  .card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; padding-bottom:14px; border-bottom:1.5px solid var(--bg2); }
+  .card-title { font-family:'Playfair Display',serif; font-size:16px; font-weight:600; color:var(--blue-deep); }
+  .card-badge { font-size:10px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--blue-mid); background:var(--blue-soft); padding:3px 10px; border-radius:999px; }
+
+  /* FIELDS */
+  .section-divider {
+    display:flex; align-items:center; gap:12px; margin:4px 0;
+    font-size:10px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint);
+  }
+  .section-divider::before,.section-divider::after { content:''; flex:1; height:1px; background:var(--border-lt); }
+  .field-row { display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--border-lt); gap:12px; }
+  .field-row:last-child { border-bottom:none; }
+  .field-name { font-size:13px; font-weight:500; color:var(--text); margin-bottom:2px; }
+  .field-desc { font-size:10px; color:var(--text-faint); }
+  .field-input-wrap { display:flex; align-items:center; gap:5px; flex-shrink:0; }
+  .field-currency { font-size:12px; color:var(--text-dim); font-weight:500; }
+  input.field-num {
+    background:var(--blue-pale); border:1.5px solid transparent; border-radius:var(--radius-sm);
+    padding:7px 12px; color:var(--blue); font-family:'DM Sans',sans-serif;
+    font-size:14px; font-weight:600; outline:none; transition:all .18s;
+    width:140px; text-align:right;
+  }
+  input.field-num:focus { border-color:var(--blue-mid); background:var(--white); box-shadow:0 0 0 3px rgba(46,107,239,.1); color:var(--blue-deep); }
+  input.field-num:hover:not(:focus) { border-color:var(--border); background:var(--blue-soft); }
+
+  /* RESULTS */
+  .results-section { margin-top:16px; padding-top:16px; border-top:1.5px solid var(--bg2); }
+  .result-row { display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--border-lt); gap:12px; }
+  .result-row:last-child { border-bottom:none; }
+  .result-name { font-size:12px; color:var(--text-mid); }
+  .result-value { font-size:13px; font-weight:600; color:var(--text); transition:all .3s; font-variant-numeric:tabular-nums; }
+  .result-value.positive { color:var(--success); }
+  .result-value.negative { color:var(--danger); }
+  .result-value.accent   { color:var(--blue); }
+
+  /* TOAST */
+  .toast {
+    position:fixed; bottom:28px; right:28px; background:var(--white); border:1px solid var(--border);
+    border-radius:var(--radius-sm); padding:13px 20px; font-size:13px; font-weight:500; color:var(--text);
+    z-index:1000; box-shadow:var(--shadow-lg); transform:translateY(80px); opacity:0;
+    transition:all .3s cubic-bezier(.34,1.56,.64,1); max-width:340px;
+  }
+  .toast.show { transform:translateY(0); opacity:1; }
+  .toast.success { border-left:3px solid var(--success); }
+  .toast.error   { border-left:3px solid var(--danger); color:var(--danger); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div>
+      <div class="header-eyebrow">Simulador financiero</div>
+      <h1>Compra<em>venta</em></h1>
+    </div>
+    <div class="header-right">
+      <div class="status-pill">
+        <div class="status-dot" id="status-dot"></div>
+        <span id="status-text">Sin conectar</span>
+      </div>
+      <div class="sync-badge idle" id="sync-badge">
+        <div class="sync-spinner"></div>
+        <span class="sync-text"></span>
+      </div>
+    </div>
+  </header>
+
+  <div id="setup-panel">
+    <h2>Conectar con Google Sheets</h2>
+    <p>Introduce el ID de tu Google Sheet y tu API Key para sincronizar los datos. Cuando modifiques un valor aquí, se actualizará directamente en tu Sheet y verás el resultado recalculado al instante.</p>
+    <div class="setup-steps">
+      <div class="setup-step">
+        <div class="step-num">01 · Google Cloud</div>
+        <h3>Crear proyecto y activar API</h3>
+        <p>Ve a <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a> → activa la <strong>Google Sheets API</strong>.</p>
+      </div>
+      <div class="setup-step">
+        <div class="step-num">02 · Credenciales</div>
+        <h3>Obtener API Key</h3>
+        <p>"Credenciales" → "Crear credenciales" → "Clave de API". Para escritura necesitarás OAuth 2.0.</p>
+      </div>
+      <div class="setup-step">
+        <div class="step-num">03 · ID del Sheet</div>
+        <h3>Copiar identificador</h3>
+        <p>La cadena entre <code>/d/</code> y <code>/edit</code> en la URL de tu Sheet.</p>
+      </div>
+      <div class="setup-step">
+        <div class="step-num">04 · Permisos</div>
+        <h3>Compartir el documento</h3>
+        <p>Para lectura: Sheet público. Para escritura: usa OAuth 2.0.</p>
+      </div>
+    </div>
+    <div class="input-row">
+      <div class="input-group">
+        <label>ID del Google Sheet</label>
+        <input type="text" id="sheet-id" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms" />
+      </div>
+      <div class="input-group">
+        <label>API Key</label>
+        <input type="password" id="api-key" placeholder="AIzaSy..." />
+      </div>
+      <div class="input-group" style="max-width:180px;">
+        <label>Pestaña</label>
+        <input type="text" id="sheet-name" value="Simulación" />
+      </div>
+      <button class="btn btn-primary" onclick="connectSheets()">Conectar</button>
+      <button class="btn btn-ghost" onclick="toggleSetup()">Cerrar</button>
+    </div>
+    <div id="setup-error"></div>
+  </div>
+
+  <!-- BALANCE HERO -->
+  <div class="balance-hero">
+    <div class="balance-hero-label">Resumen de la operación</div>
+    <div class="balance-grid" style="grid-template-columns:1fr 1fr 1fr;">
+      <div class="balance-item">
+        <div class="bi-label">Balance mensual<br>con pagas extras</div>
+        <div class="bi-value" id="v-balance-con">—</div>
+        <div class="bi-sub">distribuidas en 12 meses</div>
+      </div>
+      <div class="balance-item">
+        <div class="bi-label">Total hipoteca nueva</div>
+        <div class="bi-value accent" id="v-total-hipoteca">—</div>
+        <div class="bi-sub">calculado por el Sheet</div>
+      </div>
+      <div class="balance-item">
+        <div class="bi-label">Remanente tras<br>reforma</div>
+        <div class="bi-value" id="v-restante">—</div>
+        <div class="bi-sub">beneficio venta − reforma</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="dashboard">
+    <!-- Casa actual -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Casa actual</div>
+        <div class="card-badge">Venta</div>
+      </div>
+      <div class="section-divider">Inputs editables</div>
+      <div class="field-row">
+        <div><div class="field-name">Precio de venta</div><div class="field-desc">B16 · Simulación</div></div>
+        <div class="field-input-wrap"><span class="field-currency">€</span><input class="field-num" type="text" id="i-venta" data-cell="B16" value="700.000" onchange="onFieldChange(this)" /></div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-name">Hipoteca original</div><div class="field-desc">B3 · Capital concedido</div></div>
+        <div class="field-input-wrap"><span class="field-currency">€</span><input class="field-num" type="text" id="i-hipoteca-act" data-cell="B3" value="420.000" onchange="onFieldChange(this)" /></div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-name">Comunidad mensual</div><div class="field-desc">B18</div></div>
+        <div class="field-input-wrap"><span class="field-currency">€</span><input class="field-num" type="text" id="i-comunidad-act" data-cell="B18" value="163,33" onchange="onFieldChange(this)" /></div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-name">IBI + Basura anual</div><div class="field-desc">B19 · Prorateado mensual</div></div>
+        <div class="field-input-wrap"><span class="field-currency">€</span><input class="field-num" type="text" id="i-ibi-act" data-cell="B19" value="666,19" onchange="onFieldChange(this)" /></div>
+      </div>
+      <div class="results-section">
+        <div class="section-divider">Resultados</div>
+        <div class="result-row"><span class="result-name">Hipoteca pendiente</span><span class="result-value" id="v-hip-pendiente">—</span></div>
+        <div class="result-row"><span class="result-name">Beneficio neto venta</span><span class="result-value positive" id="v-beneficio">—</span></div>
+        <div class="result-row"><span class="result-name">Mensualidad actual</span><span class="result-value" id="v-mens-act">—</span></div>
+      </div>
+    </div>
+
+    <!-- Nueva casa -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Nueva casa</div>
+        <div class="card-badge">Compra</div>
+      </div>
+      <div class="section-divider">Inputs editables</div>
+      <div class="field-row">
+        <div><div class="field-name">Precio de compra</div><div class="field-desc">B22 · Sin reforma</div></div>
+        <div class="field-input-wrap"><span class="field-currency">€</span><input class="field-num" type="text" id="i-compra" data-cell="B22" value="900.000" onchange="onFieldChange(this)" /></div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-name">Reforma</div><div class="field-desc">B23</div></div>
+        <div class="field-input-wrap"><span class="field-currency">€</span><input class="field-num" type="text" id="i-reforma" data-cell="B23" value="150.000" onchange="onFieldChange(this)" /></div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-name">Comunidad mensual</div><div class="field-desc">B29</div></div>
+        <div class="field-input-wrap"><span class="field-currency">€</span><input class="field-num" type="text" id="i-comunidad-nueva" data-cell="B29" value="240" onchange="onFieldChange(this)" /></div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-name">IBI + Basura anual</div><div class="field-desc">B30 · Prorateado mensual</div></div>
+        <div class="field-input-wrap"><span class="field-currency">€</span><input class="field-num" type="text" id="i-ibi-nueva" data-cell="B30" value="795" onchange="onFieldChange(this)" /></div>
+      </div>
+      <div class="results-section">
+        <div class="section-divider">Resultados</div>
+        <div class="result-row"><span class="result-name">Total operación (c/ impuestos)</span><span class="result-value" id="v-total-op">—</span></div>
+        <div class="result-row"><span class="result-name">Impuestos compra (10%)</span><span class="result-value" id="v-imp-compra">—</span></div>
+        <div class="result-row"><span class="result-name">Mensualidad nueva total</span><span class="result-value" id="v-mens-nueva">—</span></div>
+      </div>
+    </div>
+
+    <!-- Hipoteca -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Hipoteca nueva</div>
+        <div class="card-badge">Financiación</div>
+      </div>
+      <div class="section-divider">Inputs editables</div>
+      <div class="field-row">
+        <div><div class="field-name">Préstamo máximo banco</div><div class="field-desc">B39 · Límite aprobado</div></div>
+        <div class="field-input-wrap"><span class="field-currency">€</span><input class="field-num" type="text" id="i-max-hip" data-cell="B39" value="800.000" onchange="onFieldChange(this)" /></div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-name">Aportaciones / Arras</div><div class="field-desc">B45</div></div>
+        <div class="field-input-wrap"><span class="field-currency">€</span><input class="field-num" type="text" id="i-arras" data-cell="B45" value="30.000" onchange="onFieldChange(this)" /></div>
+      </div>
+      <div class="results-section">
+        <div class="section-divider">Resultados</div>
+        <div class="result-row"><span class="result-name">Cantidad a hipotecar + aportaciones</span><span class="result-value accent" id="v-cantidad-hip">—</span></div>
+        <div class="result-row"><span class="result-name">Préstamo reforma necesario</span><span class="result-value" id="v-prestamo-reforma">—</span></div>
+        <div class="result-row"><span class="result-name">Diferencia mensualidad</span><span class="result-value" id="v-dif-mens">—</span></div>
+      </div>
+    </div>
+
+    <!-- Ingresos -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Ingresos y gastos</div>
+        <div class="card-badge">Mensual</div>
+      </div>
+      <div class="section-divider">Inputs editables</div>
+      <div class="field-row">
+        <div><div class="field-name">Gastos casa actual / mes</div><div class="field-desc">L2 · Comunidad + IBI prorateado</div></div>
+        <div class="field-input-wrap"><span class="field-currency">€</span><input class="field-num" type="text" id="i-gastos-act" data-cell="L2" value="4.700" onchange="onFieldChange(this)" /></div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-name">Ingresos actuales / mes</div><div class="field-desc">L6 · Nóminas actuales</div></div>
+        <div class="field-input-wrap"><span class="field-currency">€</span><input class="field-num" type="text" id="i-ingresos-act" data-cell="L6" value="5.300" onchange="onFieldChange(this)" /></div>
+      </div>
+      <div class="results-section">
+        <div class="section-divider">Resultados</div>
+        <div class="result-row"><span class="result-name">Gastos nueva casa / mes</span><span class="result-value" id="v-gastos-nueva">—</span></div>
+        <div class="result-row"><span class="result-name">Balance sin extras (nuevo)</span><span class="result-value" id="v-balance-sin-card">—</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let CONFIG = { sheetId:'', apiKey:'', sheetName:'Simulación', connected:false };
+const saved = {
+  sheetId:   localStorage.getItem('sim_sheet_id')   || '',
+  apiKey:    localStorage.getItem('sim_api_key')    || '',
+  sheetName: localStorage.getItem('sim_sheet_name') || 'Simulación',
+};
+if (saved.sheetId)   document.getElementById('sheet-id').value   = saved.sheetId;
+if (saved.apiKey)    document.getElementById('api-key').value    = saved.apiKey;
+if (saved.sheetName) document.getElementById('sheet-name').value = saved.sheetName;
+
+async function connectSheets() {
+  const sheetId   = document.getElementById('sheet-id').value.trim();
+  const apiKey    = document.getElementById('api-key').value.trim();
+  const sheetName = document.getElementById('sheet-name').value.trim() || 'Simulación';
+  if (!sheetId || !apiKey) { showError('Introduce el ID del Sheet y la API Key.'); return; }
+  Object.assign(CONFIG, { sheetId, apiKey, sheetName });
+  setStatus('loading','Conectando…'); hideError();
+  try {
+    await fetchAndRender();
+    CONFIG.connected = true;
+    localStorage.setItem('sim_sheet_id', sheetId);
+    localStorage.setItem('sim_api_key', apiKey);
+    localStorage.setItem('sim_sheet_name', sheetName);
+    setStatus('connected','Conectado · '+sheetName);
+    toggleSetup(false);
+    showToast('Conexión establecida correctamente ✓','success');
+  } catch(e) {
+    setStatus('error','Error de conexión');
+    showError('No se pudo conectar: '+e.message);
+  }
+}
+
+async function fetchAndRender() {
+  const range = encodeURIComponent(`${CONFIG.sheetName}!A1:M50`);
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.sheetId}/values/${range}?key=${CONFIG.apiKey}`;
+  const res = await fetch(url);
+  if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message||res.statusText); }
+  const data = await res.json();
+  const cells = {};
+  (data.values||[]).forEach((row,ri)=>row.forEach((val,ci)=>{ cells[`${String.fromCharCode(65+ci)}${ri+1}`]=val; }));
+  updateDisplay(cells);
+}
+
+function updateDisplay(cells) {
+  const num  = k => parseFloat((cells[k]||'0').toString().replace(/\./g,'').replace(',','.')) || 0;
+  const fmt  = n => isNaN(n)||n===0 ? '—' : n.toLocaleString('es-ES',{maximumFractionDigits:2})+' €';
+  const fmtS = n => { if(isNaN(n)||n===0) return '—'; return (n>0?'+':'')+n.toLocaleString('es-ES',{maximumFractionDigits:2})+' €'; };
+
+  setInput('i-venta',          cells['B16']); setInput('i-hipoteca-act',   cells['B3']);
+  setInput('i-comunidad-act',  cells['B18']); setInput('i-ibi-act',        cells['B19']);
+  setInput('i-compra',         cells['B22']); setInput('i-reforma',        cells['B23']);
+  setInput('i-comunidad-nueva',cells['B29']); setInput('i-ibi-nueva',      cells['B30']);
+  setInput('i-max-hip',        cells['B39']); setInput('i-arras',          cells['B45']);
+  setInput('i-gastos-act',     cells['L2']);  setInput('i-ingresos-act',   cells['L6']);
+
+  const bCon=num('L12'), hip46=num('B46'), rest=num('B43');
+  setVal('v-balance-con',   fmtS(bCon), bCon>=0?'positive':'negative');
+  setVal('v-total-hipoteca',fmt(hip46),'accent');
+  setVal('v-restante',      fmtS(rest), rest>=0?'positive':'negative');
+
+  setVal('v-hip-pendiente', fmt(num('B15')));
+  setVal('v-beneficio',     fmt(num('B17')),'positive');
+  setVal('v-mens-act',      fmt(num('E10')));
+  setVal('v-total-op',      fmt(num('B34')));
+  setVal('v-imp-compra',    fmt(num('B26')));
+  setVal('v-mens-nueva',    fmt(num('H10')));
+  setVal('v-cantidad-hip',  fmt(num('B41')),'accent');
+  const pRef=num('B44'); setVal('v-prestamo-reforma', pRef>0?fmt(pRef):'0 €', pRef>0?'negative':'');
+  const dif=num('I10'); setVal('v-dif-mens', fmtS(dif), dif>=0?'positive':'negative');
+  setVal('v-gastos-nueva',  fmt(num('L3')));
+  const bSin=num('L10'); setVal('v-balance-sin-card', fmtS(bSin), bSin>=0?'positive':'negative');
+}
+
+function setInput(id, val) {
+  if (val==null) return; const el=document.getElementById(id); if(!el) return;
+  const n=parseFloat(val.toString().replace(',','.')); if(!isNaN(n)) el.value=n.toLocaleString('es-ES',{maximumFractionDigits:2});
+}
+function setVal(id, val, cls) {
+  const el=document.getElementById(id); if(!el) return;
+  el.textContent=val; el.className='result-value'+(cls?' '+cls:'');
+}
+
+let wTimer=null;
+async function onFieldChange(input) {
+  if (!CONFIG.connected) { showToast('Conecta primero con el Sheet','error'); return; }
+  const cell=input.getAttribute('data-cell');
+  const raw=input.value.replace(/\./g,'').replace(',','.');
+  const n=parseFloat(raw); if(isNaN(n)) { showToast('Valor no válido','error'); return; }
+  input.value=n.toLocaleString('es-ES',{maximumFractionDigits:2});
+  setSyncState('saving'); clearTimeout(wTimer);
+  wTimer=setTimeout(async()=>{
+    try {
+      await writeCell(cell,n); await delay(1200); await fetchAndRender();
+      setSyncState('saved'); setTimeout(()=>setSyncState('idle'),2500);
+    } catch(e) { setSyncState('idle'); showToast('Error al guardar: '+e.message,'error'); }
+  },600);
+}
+
+async function writeCell(cell,value) {
+  const range=encodeURIComponent(`${CONFIG.sheetName}!${cell}`);
+  const url=`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.sheetId}/values/${range}?valueInputOption=USER_ENTERED&key=${CONFIG.apiKey}`;
+  const res=await fetch(url,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({values:[[value]]})});
+  if(!res.ok){const e=await res.json(); if(e.error?.code===403) throw new Error('Permiso denegado. Para escritura necesitas OAuth 2.0.'); throw new Error(e.error?.message||res.statusText);}
+}
+
+function setStatus(s,t){document.getElementById('status-dot').className='status-dot '+s;document.getElementById('status-text').textContent=t;}
+function setSyncState(s){document.getElementById('sync-badge').className='sync-badge '+s;}
+function toggleSetup(show){const p=document.getElementById('setup-panel');p.style.display=show===false?'none':(p.style.display==='none'?'':'none');}
+function showError(msg){const el=document.getElementById('setup-error');el.textContent=msg;el.style.display='block';}
+function hideError(){document.getElementById('setup-error').style.display='none';}
+function showToast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+(type||'');t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),4000);}
+function delay(ms){return new Promise(r=>setTimeout(r,ms));}
+
+window.addEventListener('load',()=>{setSyncState('idle');if(saved.sheetId&&saved.apiKey)connectSheets();});
+</script>
+</body>
+</html>
