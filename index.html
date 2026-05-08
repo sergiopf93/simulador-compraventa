@@ -160,12 +160,13 @@
   .balance-item:last-child { border-right:none; margin-right:0; padding-right:0; }
   .bi-label { font-size:12px; font-weight:500; color:rgba(255,255,255,.75); margin-bottom:12px; line-height:1.4; }
   .bi-value {
-    font-family:'Playfair Display',serif; font-size:clamp(26px,2.8vw,34px);
-    font-weight:700; color:#fff; line-height:1; transition:all .35s; letter-spacing:-.5px;
+    font-family:'Playfair Display',serif; font-size:clamp(28px,3vw,38px);
+    font-weight:800; color:#fff; line-height:1; transition:all .35s; letter-spacing:-.5px;
   }
   .bi-value.positive { color:#6ee7bb; }
   .bi-value.negative { color:#fca5a5; }
-  .bi-value.accent   { color:#fff; font-weight:800; }
+  .bi-value.accent   { color:#fff !important; font-weight:800; }
+  #v-total-hipoteca  { color:#fff !important; }
   .bi-sub { font-size:10px; color:rgba(255,255,255,.4); margin-top:8px; }
 
   /* DASHBOARD */
@@ -261,7 +262,7 @@
     .bi-value { font-size: 52px !important; font-weight: 800 !important; letter-spacing: -2px !important; color: #fff !important; }
     .bi-value.positive { color: #6ee7bb !important; }
     .bi-value.negative { color: #fca5a5 !important; }
-    .bi-value.accent   { color: #fff !important; }
+    .bi-value.accent, #v-total-hipoteca { color: #fff !important; font-weight: 800 !important; }
     .bi-sub { font-size: 11px; margin-top: 4px; }
 
     /* Dashboard */
