@@ -164,8 +164,7 @@
   }
   .bi-value.positive { color:#6ee7bb; }
   .bi-value.negative { color:#fca5a5; }
-  .bi-value.accent   { color:#fff !important; font-weight:800; }
-  #v-total-hipoteca  { color:#fff !important; }
+  .bi-value.accent   { color:#93c5fd; font-weight:800; }
   .bi-sub { font-size:10px; color:rgba(255,255,255,.4); margin-top:8px; }
 
   /* DASHBOARD */
@@ -266,7 +265,7 @@
       letter-spacing: -1.5px !important;
       line-height: 1 !important;
     }
-    #v-total-hipoteca { color: #93c5fd !important; }
+    .bi-value.accent, #v-total-hipoteca { color: #93c5fd !important; }
     .bi-sub { font-size: 11px; margin-top: 6px; }
 
     .dashboard { grid-template-columns: 1fr; gap: 12px; }
@@ -339,7 +338,7 @@
       </div>
       <div class="balance-item">
         <div class="bi-label">Total hipoteca nueva</div>
-        <div class="bi-value" id="v-total-hipoteca" style="color:#fff!important">—</div>
+        <div class="bi-value" id="v-total-hipoteca">—</div>
         <div class="bi-sub">calculado por el Sheet</div>
       </div>
       <div class="balance-item">
@@ -536,8 +535,9 @@ async function fetchAndRender() {
 
 function updateDisplay(cells) {
   const num  = k => parseSheetNum(cells[k]);
-  const fmt  = n => isNaN(n)||n===0 ? '—' : n.toLocaleString('es-ES',{maximumFractionDigits:2})+' €';
-  const fmtS = n => { if(isNaN(n)||n===0) return '—'; return (n>0?'+':'')+n.toLocaleString('es-ES',{maximumFractionDigits:2})+' €'; };
+  const opts = { minimumFractionDigits:2, maximumFractionDigits:2 };
+  const fmt  = n => (isNaN(n)||n===0) ? '—' : n.toLocaleString('es-ES', opts)+' €';
+  const fmtS = n => { if(isNaN(n)||n===0) return '—'; return (n>0?'+':'')+n.toLocaleString('es-ES', opts)+' €'; };
 
   setInput('i-venta',          cells['B16']); setInput('i-hipoteca-act',   cells['B3']);
   setInput('i-comunidad-act',  cells['B18']); setInput('i-ibi-act',        cells['B19']);
@@ -548,7 +548,7 @@ function updateDisplay(cells) {
 
   const bCon=num('L12'), hip46=num('B46'), rest=num('B43');
   setVal('v-balance-con',   fmtS(bCon), bCon>=0?'positive':'negative');
-  setVal('v-total-hipoteca',fmt(hip46));
+  setVal('v-total-hipoteca',fmt(hip46),'accent');
   setVal('v-restante',      fmtS(rest), rest>=0?'positive':'negative');
 
   setVal('v-hip-pendiente', fmt(num('B15')));
@@ -578,7 +578,7 @@ function parseSheetNum(raw) {
 function setInput(id, val) {
   if (val==null) return; const el=document.getElementById(id); if(!el) return;
   const n = parseSheetNum(val.toString());
-  if(!isNaN(n)) el.value=n.toLocaleString('es-ES',{maximumFractionDigits:2});
+  if(!isNaN(n)) el.value=n.toLocaleString('es-ES',{minimumFractionDigits:2, maximumFractionDigits:2});
 }
 function setVal(id, val, cls) {
   const el=document.getElementById(id); if(!el) return;
