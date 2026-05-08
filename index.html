@@ -228,17 +228,15 @@
   .toast.error   { border-left:3px solid var(--danger); color:var(--danger); }
 
   /* ── MOBILE / IPHONE ── */
-  @media (max-width: 600px) {
+  @media (max-width: 860px) {
     body { padding: 16px 14px 80px; }
 
-    /* Header */
     header { margin-bottom: 20px; gap: 12px; align-items: flex-start; }
     h1 { font-size: 28px; }
     .header-right { align-items: flex-start; gap: 6px; }
     .status-pill { padding: 6px 12px; font-size: 11px; }
     .sync-badge { font-size: 10px; }
 
-    /* Setup panel */
     #setup-panel { padding: 20px 16px; margin-bottom: 16px; }
     #setup-panel h2 { font-size: 17px; }
     .input-row { flex-direction: column; }
@@ -246,41 +244,38 @@
     .btn { width: 100%; justify-content: center; text-align: center; padding: 13px; }
     .btn-ghost { margin-top: 4px; }
 
-    /* Balance hero — keep blue, stack vertically */
+    /* Balance hero KPIs — big and bold */
     .balance-hero { padding: 22px 18px; margin-bottom: 14px; }
     .balance-hero-label { margin-bottom: 18px; font-size: 9px; }
     .balance-grid { grid-template-columns: 1fr !important; gap: 0; }
     .balance-item {
-      padding: 18px 0 !important;
+      padding: 20px 0 !important;
       margin-right: 0 !important;
       border-right: none !important;
       border-bottom: 1px solid rgba(255,255,255,.12);
     }
     .balance-item:last-child { border-bottom: none; padding-bottom: 0 !important; }
-    .bi-label { font-size: 13px; margin-bottom: 8px; color: rgba(255,255,255,.85) !important; }
-    .bi-value { font-size: 52px !important; font-weight: 800 !important; letter-spacing: -2px !important; color: #fff !important; }
-    .bi-value.positive { color: #6ee7bb !important; }
-    .bi-value.negative { color: #fca5a5 !important; }
-    .bi-value.accent, #v-total-hipoteca { color: #fff !important; font-weight: 800 !important; }
-    .bi-sub { font-size: 11px; margin-top: 4px; }
+    .bi-label { font-size: 13px !important; margin-bottom: 10px; color: rgba(255,255,255,.85) !important; font-weight: 500 !important; }
+    .bi-value,
+    .balance-hero .bi-value,
+    #v-balance-con,
+    #v-total-hipoteca,
+    #v-restante {
+      font-size: 44px !important;
+      font-weight: 800 !important;
+      letter-spacing: -1.5px !important;
+      line-height: 1 !important;
+    }
+    .bi-sub { font-size: 11px; margin-top: 6px; }
 
-    /* Dashboard */
     .dashboard { grid-template-columns: 1fr; gap: 12px; }
-
-    /* Cards */
     .card { padding: 18px 16px; }
     .card-title { font-size: 15px; }
-
-    /* Field rows — stack label above input on very small screens */
     .field-row { flex-wrap: wrap; gap: 8px; padding: 12px 0; }
     .field-input-wrap { margin-left: auto; }
     input.field-num { width: 120px; font-size: 13px; }
-
-    /* Results */
     .result-name { font-size: 11px; }
     .result-value { font-size: 12px; }
-
-    /* Toast full width on mobile */
     .toast { left: 14px; right: 14px; bottom: 16px; max-width: none; font-size: 12px; }
   }
 
