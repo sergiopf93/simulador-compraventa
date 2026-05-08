@@ -9,7 +9,6 @@
 <meta name="theme-color" content="#0b2a6b">
 <title>Simulador Compraventa</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root {
     --bg:        #f0f4fa;
@@ -295,26 +294,11 @@
     </div>
   </header>
 
-  <div id="setup-panel">
-    <h2>Conectar con Google Sheets</h2>
-    <p>Introduce el ID de tu Sheet y pulsa <strong>Iniciar sesión con Google</strong> para conectar con permisos de lectura y escritura.</p>
-    <div class="input-row" style="margin-bottom:16px;">
-      <div class="input-group">
-        <label>ID del Google Sheet</label>
-        <input type="text" id="sheet-id" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms" />
-      </div>
-      <div class="input-group" style="max-width:180px;">
-        <label>Pestaña</label>
-        <input type="text" id="sheet-name" value="Simulación" />
-      </div>
-      <button class="btn btn-primary" id="btn-login" onclick="startOAuth()">
-        <svg style="width:16px;height:16px;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-        Iniciar sesión con Google
-      </button>
-      <button class="btn btn-ghost" onclick="toggleSetup()">Cerrar</button>
-    </div>
+  <div id="setup-panel" style="display:none">
+    <h2>Configuración</h2>
+    <p>El simulador está conectado automáticamente a tu Google Sheet vía Apps Script.</p>
     <div id="setup-error"></div>
-    <div id="oauth-user" style="display:none; font-size:12px; color:var(--success); font-weight:500; margin-top:8px;"></div>
+    <div id="oauth-user"></div>
   </div>
 
   <!-- BALANCE HERO -->
@@ -453,73 +437,49 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const CLIENT_ID = '188263947798-8f03k3hoja01375ieh90k1p792uab4t7.apps.googleusercontent.com';
-const SCOPES    = 'https://www.googleapis.com/auth/spreadsheets';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxmRyG7qcLFUb1NDIC0tPdMnhtqT3LrShQCOiSwLpDqMV2rUSD_c8pkKenA8vOGGPsg/exec';
 
-let CONFIG = { sheetId:'', sheetName:'Simulación', connected:false, accessToken:'' };
-let tokenClient;
+let CONFIG = { connected: false };
 
-const saved = {
-  sheetId:   localStorage.getItem('sim_sheet_id')   || '',
-  sheetName: localStorage.getItem('sim_sheet_name') || 'Simulación',
-};
-if (saved.sheetId)   document.getElementById('sheet-id').value   = saved.sheetId;
-if (saved.sheetName) document.getElementById('sheet-name').value = saved.sheetName;
-
-// Init Google OAuth token client
-window.addEventListener('load', () => {
+// ── AUTO-CONNECT ON LOAD ──────────────────────────────
+window.addEventListener('load', async () => {
   setSyncState('idle');
-  google.accounts.oauth2 && initTokenClient();
-});
-
-function initTokenClient() {
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID,
-    scope: SCOPES,
-    callback: async (resp) => {
-      if (resp.error) { showError('Error de autenticación: ' + resp.error); setStatus('error','Error de autenticación'); return; }
-      CONFIG.accessToken = resp.access_token;
-      await connectWithToken();
-    }
-  });
-}
-
-function startOAuth() {
-  const sheetId   = document.getElementById('sheet-id').value.trim();
-  const sheetName = document.getElementById('sheet-name').value.trim() || 'Simulación';
-  if (!sheetId) { showError('Introduce primero el ID del Sheet.'); return; }
-  CONFIG.sheetId   = sheetId;
-  CONFIG.sheetName = sheetName;
-  hideError();
-  setStatus('loading', 'Autenticando…');
-  tokenClient.requestAccessToken({ prompt: 'consent' });
-}
-
-async function connectWithToken() {
+  setStatus('loading', 'Conectando…');
   try {
     await fetchAndRender();
     CONFIG.connected = true;
-    localStorage.setItem('sim_sheet_id',   CONFIG.sheetId);
-    localStorage.setItem('sim_sheet_name', CONFIG.sheetName);
-    setStatus('connected', 'Conectado · ' + CONFIG.sheetName);
-    document.getElementById('oauth-user').style.display = 'block';
-    document.getElementById('oauth-user').textContent = '✓ Sesión iniciada con Google — lectura y escritura activadas';
-    toggleSetup(false);
-    showToast('Conectado con permisos de lectura y escritura ✓', 'success');
+    setStatus('connected', 'Conectado · Simulación');
   } catch(e) {
     setStatus('error', 'Error de conexión');
-    showError('No se pudo conectar: ' + e.message);
+    showToast('No se pudo conectar: ' + e.message, 'error');
   }
-}
+});
 
+// ── LEER DATOS ────────────────────────────────────────
 async function fetchAndRender() {
-  const range = encodeURIComponent(`${CONFIG.sheetName}!A1:M50`);
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.sheetId}/values/${range}`;
-  const res = await fetch(url, { headers: { Authorization: 'Bearer ' + CONFIG.accessToken } });
-  if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || res.statusText); }
+  const res = await fetch(APPS_SCRIPT_URL);
+  if (!res.ok) throw new Error(res.statusText);
   const data = await res.json();
   const cells = {};
-  (data.values||[]).forEach((row,ri) => row.forEach((val,ci) => { cells[`${String.fromCharCode(65+ci)}${ri+1}`] = val; }));
+  (data.values||[]).forEach((row, ri) => row.forEach((val, ci) => {
+    cells[`${String.fromCharCode(65+ci)}${ri+1}`] = val;
+  }));
+  updateDisplay(cells);
+}
+
+// ── ESCRIBIR CELDA ────────────────────────────────────
+async function writeCell(cell, value) {
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ cell, value })
+  });
+  if (!res.ok) throw new Error(res.statusText);
+  const data = await res.json();
+  const cells = {};
+  (data.values||[]).forEach((row, ri) => row.forEach((val, ci) => {
+    cells[`${String.fromCharCode(65+ci)}${ri+1}`] = val;
+  }));
   updateDisplay(cells);
 }
 
@@ -593,15 +553,15 @@ function setVal(id, val, cls) {
 
 let wTimer=null;
 async function onFieldChange(input) {
-  if (!CONFIG.connected) { showToast('Conecta primero con el Sheet','error'); return; }
+  if (!CONFIG.connected) { showToast('Aún conectando, espera un momento…','error'); return; }
   const cell=input.getAttribute('data-cell');
   const raw=input.value.replace(/\./g,'').replace(',','.');
   const n=parseFloat(raw); if(isNaN(n)) { showToast('Valor no válido','error'); return; }
-  input.value=n.toLocaleString('es-ES',{maximumFractionDigits:2});
+  input.value=n.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2});
   setSyncState('saving'); clearTimeout(wTimer);
   wTimer=setTimeout(async()=>{
     try {
-      await writeCell(cell,n); await delay(1200); await fetchAndRender();
+      await writeCell(cell, n);
       setSyncState('saved'); setTimeout(()=>setSyncState('idle'),2500);
     } catch(e) { setSyncState('idle'); showToast('Error al guardar: '+e.message,'error'); }
   },600);
@@ -620,13 +580,11 @@ async function writeCell(cell,value) {
 
 function setStatus(s,t){document.getElementById('status-dot').className='status-dot '+s;document.getElementById('status-text').textContent=t;}
 function setSyncState(s){document.getElementById('sync-badge').className='sync-badge '+s;}
-function toggleSetup(show){const p=document.getElementById('setup-panel');p.style.display=show===false?'none':(p.style.display==='none'?'':'none');}
+function toggleSetup(show){const p=document.getElementById('setup-panel');p.style.display=show===false?'none':(p.style.display==='none'?'block':'none');}
 function showError(msg){const el=document.getElementById('setup-error');el.textContent=msg;el.style.display='block';}
 function hideError(){document.getElementById('setup-error').style.display='none';}
 function showToast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+(type||'');t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),4000);}
 function delay(ms){return new Promise(r=>setTimeout(r,ms));}
-
-window.addEventListener('load',()=>{setSyncState('idle');if(saved.sheetId&&saved.apiKey)connectSheets();});
 </script>
 </body>
 </html>
