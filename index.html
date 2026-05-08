@@ -2,7 +2,11 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Simulador">
+<meta name="theme-color" content="#0b2a6b">
 <title>Simulador Compraventa</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -223,6 +227,67 @@
   .toast.show { transform:translateY(0); opacity:1; }
   .toast.success { border-left:3px solid var(--success); }
   .toast.error   { border-left:3px solid var(--danger); color:var(--danger); }
+
+  /* ── MOBILE / IPHONE ── */
+  @media (max-width: 600px) {
+    body { padding: 16px 14px 80px; }
+
+    /* Header */
+    header { margin-bottom: 20px; gap: 12px; align-items: flex-start; }
+    h1 { font-size: 28px; }
+    .header-right { align-items: flex-start; gap: 6px; }
+    .status-pill { padding: 6px 12px; font-size: 11px; }
+    .sync-badge { font-size: 10px; }
+
+    /* Setup panel */
+    #setup-panel { padding: 20px 16px; margin-bottom: 16px; }
+    #setup-panel h2 { font-size: 17px; }
+    .input-row { flex-direction: column; }
+    .input-group { min-width: 0; width: 100%; }
+    .btn { width: 100%; justify-content: center; text-align: center; padding: 13px; }
+    .btn-ghost { margin-top: 4px; }
+
+    /* Balance hero */
+    .balance-hero { padding: 20px 18px; margin-bottom: 14px; }
+    .balance-hero-label { margin-bottom: 16px; font-size: 9px; }
+    .balance-grid {
+      grid-template-columns: 1fr !important;
+      gap: 20px 0;
+    }
+    .balance-item {
+      padding: 0 0 20px 0 !important;
+      margin-right: 0 !important;
+      border-right: none !important;
+      border-bottom: 1px solid rgba(255,255,255,.1);
+    }
+    .balance-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .bi-value { font-size: 26px !important; }
+    .bi-label { font-size: 11px; }
+
+    /* Dashboard */
+    .dashboard { grid-template-columns: 1fr; gap: 12px; }
+
+    /* Cards */
+    .card { padding: 18px 16px; }
+    .card-title { font-size: 15px; }
+
+    /* Field rows — stack label above input on very small screens */
+    .field-row { flex-wrap: wrap; gap: 8px; padding: 12px 0; }
+    .field-input-wrap { margin-left: auto; }
+    input.field-num { width: 120px; font-size: 13px; }
+
+    /* Results */
+    .result-name { font-size: 11px; }
+    .result-value { font-size: 12px; }
+
+    /* Toast full width on mobile */
+    .toast { left: 14px; right: 14px; bottom: 16px; max-width: none; font-size: 12px; }
+  }
+
+  /* Safe area for iPhone X+ notch */
+  @supports (padding-bottom: env(safe-area-inset-bottom)) {
+    body { padding-bottom: calc(60px + env(safe-area-inset-bottom)); }
+  }
 </style>
 </head>
 <body>
