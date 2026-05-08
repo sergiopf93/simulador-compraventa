@@ -258,8 +258,10 @@
     }
     .balance-item:last-child { border-bottom: none; padding-bottom: 0 !important; }
     .bi-label { font-size: 13px; margin-bottom: 8px; color: rgba(255,255,255,.85) !important; }
-    .bi-value { font-size: 42px !important; font-weight: 800 !important; letter-spacing: -1px !important; }
-    .bi-value.accent { color: #fff !important; }
+    .bi-value { font-size: 52px !important; font-weight: 800 !important; letter-spacing: -2px !important; color: #fff !important; }
+    .bi-value.positive { color: #6ee7bb !important; }
+    .bi-value.negative { color: #fca5a5 !important; }
+    .bi-value.accent   { color: #fff !important; }
     .bi-sub { font-size: 11px; margin-top: 4px; }
 
     /* Dashboard */
@@ -341,7 +343,7 @@
       </div>
       <div class="balance-item">
         <div class="bi-label">Total hipoteca nueva</div>
-        <div class="bi-value accent" id="v-total-hipoteca">—</div>
+        <div class="bi-value" id="v-total-hipoteca">—</div>
         <div class="bi-sub">calculado por el Sheet</div>
       </div>
       <div class="balance-item">
@@ -550,7 +552,7 @@ function updateDisplay(cells) {
 
   const bCon=num('L12'), hip46=num('B46'), rest=num('B43');
   setVal('v-balance-con',   fmtS(bCon), bCon>=0?'positive':'negative');
-  setVal('v-total-hipoteca',fmt(hip46),'accent');
+  setVal('v-total-hipoteca',fmt(hip46));
   setVal('v-restante',      fmtS(rest), rest>=0?'positive':'negative');
 
   setVal('v-hip-pendiente', fmt(num('B15')));
