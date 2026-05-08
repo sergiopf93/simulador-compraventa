@@ -155,7 +155,6 @@
   }
   .balance-hero-label::after { content:''; flex:1; height:1px; background:rgba(255,255,255,.15); }
   .balance-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:0; position:relative; z-index:1; }
-  @media(max-width:600px){ .balance-grid { grid-template-columns:1fr; gap:0; } }
   .balance-item { padding:0 28px 0 0; border-right:1px solid rgba(255,255,255,.12); margin-right:28px; }
   .balance-item:last-child { border-right:none; margin-right:0; padding-right:0; }
   .bi-label { font-size:12px; font-weight:500; color:rgba(255,255,255,.75); margin-bottom:12px; line-height:1.4; }
@@ -336,7 +335,7 @@
   <!-- BALANCE HERO -->
   <div class="balance-hero">
     <div class="balance-hero-label">Resumen de la operación</div>
-    <div class="balance-grid" style="grid-template-columns:1fr 1fr 1fr;">
+    <div class="balance-grid">
       <div class="balance-item">
         <div class="bi-label">Balance mensual<br>con pagas extras</div>
         <div class="bi-value" id="v-balance-con">—</div>
@@ -344,7 +343,7 @@
       </div>
       <div class="balance-item">
         <div class="bi-label">Total hipoteca nueva</div>
-        <div class="bi-value" id="v-total-hipoteca">—</div>
+        <div class="bi-value" id="v-total-hipoteca" style="color:#fff!important">—</div>
         <div class="bi-sub">calculado por el Sheet</div>
       </div>
       <div class="balance-item">
@@ -587,7 +586,13 @@ function setInput(id, val) {
 }
 function setVal(id, val, cls) {
   const el=document.getElementById(id); if(!el) return;
-  el.textContent=val; el.className='result-value'+(cls?' '+cls:'');
+  el.textContent=val;
+  // KPI elements have bi-value class — preserve it, only add color modifier
+  if (el.classList.contains('bi-value') || el.closest('.balance-hero')) {
+    el.className='bi-value'+(cls?' '+cls:'');
+  } else {
+    el.className='result-value'+(cls?' '+cls:'');
+  }
 }
 
 let wTimer=null;
